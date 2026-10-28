@@ -7,8 +7,9 @@ cd "$(dirname "$0")"
 
 security create-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_NAME}"
 
-# Add keychain to search path
-security list-keychains -d user -s "${KEYCHAIN_NAME}"
+# Add keychain to search path (keeping the existing ones, restored below)
+ORIG_KEYCHAINS=$(security list-keychains -d user | tr -d '"' | xargs)
+security list-keychains -d user -s ${ORIG_KEYCHAINS} "${KEYCHAIN_NAME}"
 
 security import warpd.p12 -k "${KEYCHAIN_NAME}" -P "" -T /usr/bin/codesign
 security import warpd.cer -k "${KEYCHAIN_NAME}" -T /usr/bin/codesign
@@ -20,3 +21,4 @@ security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD"
 codesign --force --deep --keychain "${KEYCHAIN_NAME}" -s warpd ../bin/warpd
 
 security delete-keychain ${KEYCHAIN_NAME}
+security list-keychains -d user -s ${ORIG_KEYCHAINS}
